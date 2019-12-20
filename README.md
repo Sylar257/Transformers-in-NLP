@@ -2,17 +2,25 @@
 
 In this note book we will be look in very close details of the famous **transformer** as proposed in the paper [Attention Is All You Need](https://arxiv.org/abs/1706.03762). To accompany the digestion, we will also be looking at how **attention mechanism** works in deep learning and finally implement transformer with **transfer learning** with FastAI library.
 
-Acknowledgement, the illustration of mostly guided by the amazing blog post by **Jay Alammar**. Please go and check out his blog series in [this link](http://jalammar.github.io/illustrated-transformer/).
-
 ## Contents
+
+[***Overview***](https://github.com/Sylar257/Transformers-in-NLP#overview): Current research trends, incentives of this repo, and our objectives
 
 [***Self-Attention***](https://github.com/Sylar257/Transformers-in-NLP#self-attention): how the self-attention block works in deep learning architectures
 
 [***Positional Encoding***](https://github.com/Sylar257/Transformers-in-NLP#positional_encoding): representing the order of the sequence using positional encoding
 
+[***Residual connection***](https://github.com/Sylar257/Transformers-in-NLP#residuals): residuals are implemented for better learning efficiency and loss convergence
+
 [***Transformer***](https://github.com/Sylar257/GCP-production-ML-systems#adaptable_ml_system): high-level structure of the transformer
 
 [***Implementation***](https://github.com/Sylar257/GCP-production-ML-systems#high_performance_ML_system): Implement transformer with transfer learning on IMDB sentiment analysis dataset
+
+## Overview
+
+
+
+
 
 
 
@@ -61,3 +69,34 @@ If we do the same **self-attention** calculation we outlined above, just eight d
 
 This leaves us with a bit of a challenge. The following layers is not expecting eight matrices — they are expecting a single matrix that contains a score for each word. So we need a way to *condense* these eight down to a single matrix. Solution: concatenate the matrices then use a another network to project it to the right shape:
 
+![multiheaded-attention-score-condensation](images\multiheaded-attention-score-condensation.png)
+
+## The overall picture of self-attention
+
+Finally, when we put everything together.
+
+![multiheaded-attention-overview](images\multiheaded-attention-overview.png)
+
+# Positional_Encoding
+
+One thing that’s missing from the model is the ability to locate the word’s position in the sentence.
+
+To address this, the transformer adds a **vector** to each input embedding. These vectors follow a specific pattern that the model **learns**, which helps it determine the position of each word, or the distance between different words in the sequence. The intuition here is that adding these values to the embeddings provides meaningful distances between the embedding vectors once they’re projected into **Q/K/V** vectors and during dot-product attention.
+
+![positional-encoding](images\positional-encoding.png)
+
+If we assumed the embedding has a dimensionality of *4*, the actual positional encodings would look like this:
+
+![positional-encoding-example](images\positional-encoding-example.png)
+
+# Residuals
+
+Similar to the **ResNet**, in the transformer’s encoder architecture there are *residual connections*. In each encoder, there is a residual connection around it, and is followed by a [layer-normalization](https://arxiv.org/abs/1607.06450) step. If we visualize the architecture is looks like this:
+
+![residual-connection](images\residual-connection.png)
+
+**"X”** vector is the [positional encoding](https://github.com/Sylar257/Transformers-in-NLP#positional_encoding).
+
+Of course, the layers are stacked for the **transformer**. We have **6-layer-stacking** for both *encoder* and *decoder* by the design of the [original paper](https://arxiv.org/abs/1706.03762). For illustration, if have a transformer of 2-layer-stacking:
+
+![layer-stacking](images\layer-stacking.png)
