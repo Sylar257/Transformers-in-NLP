@@ -18,9 +18,17 @@ In this note book we will be look in very close details of the famous **transfor
 
 ## Overview
 
+[*Jeremy Howard*](https://medium.com/@jeremyphoward) and [Sebastian Ruder](https://medium.com/@sebastianruder) first introduced **transfer learning** with NLP in the [ULMFiT paper](https://arxiv.org/pdf/1801.06146.pdf) and implemented the technique with the [FastAI](https://www.fast.ai/) library. 
 
+For details of implementation of FastAI-NLP please refer to the [fast.ai course](https://course.fast.ai/videos/?lesson=4) or my two previous repos: [ULMFiT-Sentiment-Analysis](https://github.com/Sylar257/ULMFiT-Sentiment-Analysis) and [Non-English-language-NLP](https://github.com/Sylar257/Non-English-language-NLP).
 
+In traditional NLP research, **transfer learning** was long reckoned as not applicable even after it’s great success in the computer vision research. For a long time, NLP was though as special and needs to be treated with special care even when it comes to deep learning solution implementation. Hence, nobody published anything about transfer learning for NLP until Jeremy et al. proved to the crowd that *"transfer learning is nothing specific to the computer vision domain”* and this whole kicked off. The recent NLP academic trend has began to shift towards transfer learning as the time-saving and learning efficiency boost is quite obvious.
 
+Big name companies has continued to push this technique further with **transfer learning** applied with more sophisticated architectures at larger scales: Google(BERT, Transformer-XL, XLNet), Facebook(RoBERTa, XLM) and OpenAI(GPT, GPT-2). 
+
+FastAI library itself comes only with [AWS-LSTM](https://arxiv.org/abs/1708.02182), [Transformer](https://arxiv.org/abs/1706.03762) and [Transformer-XL](https://arxiv.org/abs/1901.02860). If we want to implement more advanced models(such as BERT or RoBERTa) while still enjoy the fast-prototyping and massive optimization offered by `FastAI`, we need to learn to integrate the two.
+
+More specifically, we are going integrate `FastAI` and the `transformers` library developed by *[Hugging Face](https://huggingface.co/)*, formerly known as `pytorch-transformers` and `pytorch-pretrained-bert`. Now this library contains over 40 *state-of-the-art* **pre-trained** NLP models which we simply can’t pass on. It also come with essential utilities such as *tokenizer*, *optimizer* and *learning rate scheduler*. However, in this repo, we will use most of utility functions from `fastai` library as it’s a bit more optimized.
 
 
 
@@ -100,4 +108,3 @@ Similar to the **ResNet**, in the transformer’s encoder architecture there are
 Of course, the layers are stacked for the **transformer**. We have **6-layer-stacking** for both *encoder* and *decoder* by the design of the [original paper](https://arxiv.org/abs/1706.03762). For illustration, if have a transformer of 2-layer-stacking:
 
 ![layer-stacking](images/layer-stacking.png)
-
