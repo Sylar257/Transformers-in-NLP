@@ -40,7 +40,7 @@ At the high-level, **Self-attention** allows the algorithm to associate '*it*' t
 
 The first step of calculating self-attention is to create three vectors from each of the encoder’s input vectors (this would be the **embeddings** of the words). Hence, we create a **Query vector**, a **Key vector**, and a **Value vector** for each word. These vectors are created by *multiplying* the embeddings by three matrices that we trained during the *training process*.
 
-![query-key-value](images\query-key-value.png)
+![query-key-value](images/query-key-value.png)
 
 What are the “query”, “key”, and “value” vectors?
 
@@ -50,7 +50,7 @@ They’re abstractions that are useful for calculating and thinking about **atte
 
 With “query”, “key”, and “value”, we can compute a **score** for each word in the *input sentence*. The score determines how much focus to place on other parts of the **input sentence** as we encode a word at the given position.
 
-![attention-score](images\attention-score.png)
+![attention-score](images/attention-score.png)
 
 This "**Z**" score can be thought as to give us a score distribution that represents the attention the network has over all other word in the input sentence.
 
@@ -61,21 +61,21 @@ This is another mechanism introduced by the authors to further improve the perfo
 1. It expands the model’s ability to focus on different positions. Yes, in the example above, "**Z**" contains a little bit of every other encoding, but it could be *dominated* by the actual word itself (thanks to the *softmax*). It would be useful if we’re translating a sentence like *"The cat can’t jump onto the table because it’s too tall”* , when the algorithm knows what the word "it’s” is referring to.
 2. It give the attention layer multiple "representation subspaces”. As we will see for the illustration below, with multi-headed attention we have not only one, but multiple sets of **Query/Key/Value** weight matrices (the **Transformer** uses **eight** attention heads, so we end up with eight sets for each encoder/decoder). Each of these sets is randomly initialized. Then, after training, each set is used to project the input embeddings (or vectors from lower encoders/decoders) into a different representation subspace.
 
-![attention-score](images\multiheaded-attention-QKV.png)
+![attention-score](images/multiheaded-attention-QKV.png)
 
 If we do the same **self-attention** calculation we outlined above, just eight different times with different weight matrices we end up with eight different **"Z”** matrices:
 
-![multiheaded-attention-Z-score](images\multiheaded-attention-Z-score.png)
+![multiheaded-attention-Z-score](images/multiheaded-attention-Z-score.png)
 
 This leaves us with a bit of a challenge. The following layers is not expecting eight matrices — they are expecting a single matrix that contains a score for each word. So we need a way to *condense* these eight down to a single matrix. Solution: concatenate the matrices then use a another network to project it to the right shape:
 
-![multiheaded-attention-score-condensation](images\multiheaded-attention-score-condensation.png)
+![multiheaded-attention-score-condensation](images/multiheaded-attention-score-condensation.png)
 
 ## The overall picture of self-attention
 
 Finally, when we put everything together.
 
-![multiheaded-attention-overview](images\multiheaded-attention-overview.png)
+![multiheaded-attention-overview](images/multiheaded-attention-overview.png)
 
 # Positional_Encoding
 
@@ -83,20 +83,21 @@ One thing that’s missing from the model is the ability to locate the word’s 
 
 To address this, the transformer adds a **vector** to each input embedding. These vectors follow a specific pattern that the model **learns**, which helps it determine the position of each word, or the distance between different words in the sequence. The intuition here is that adding these values to the embeddings provides meaningful distances between the embedding vectors once they’re projected into **Q/K/V** vectors and during dot-product attention.
 
-![positional-encoding](images\positional-encoding.png)
+![positional-encoding](images/positional-encoding.png)
 
 If we assumed the embedding has a dimensionality of *4*, the actual positional encodings would look like this:
 
-![positional-encoding-example](images\positional-encoding-example.png)
+![positional-encoding-example](images/positional-encoding-example.png)
 
 # Residuals
 
 Similar to the **ResNet**, in the transformer’s encoder architecture there are *residual connections*. In each encoder, there is a residual connection around it, and is followed by a [layer-normalization](https://arxiv.org/abs/1607.06450) step. If we visualize the architecture is looks like this:
 
-![residual-connection](images\residual-connection.png)
+![residual-connection](images/residual-connection.png)
 
 **"X”** vector is the [positional encoding](https://github.com/Sylar257/Transformers-in-NLP#positional_encoding).
 
 Of course, the layers are stacked for the **transformer**. We have **6-layer-stacking** for both *encoder* and *decoder* by the design of the [original paper](https://arxiv.org/abs/1706.03762). For illustration, if have a transformer of 2-layer-stacking:
 
-![layer-stacking](images\layer-stacking.png)
+![layer-stacking](images/layer-stacking.png)
+
