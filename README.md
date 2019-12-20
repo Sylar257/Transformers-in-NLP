@@ -12,9 +12,9 @@ In this note book we will be look in very close details of the famous **transfor
 
 [***Residual connection***](https://github.com/Sylar257/Transformers-in-NLP#residuals): residuals are implemented for better learning efficiency and loss convergence
 
-[***Transformer***](https://github.com/Sylar257/GCP-production-ML-systems#adaptable_ml_system): high-level structure of the transformer
+[***Transformer***](https://github.com/Sylar257/Transformers-in-NLP#Overall_structure): high-level structure of the transformer
 
-[***Implementation***](https://github.com/Sylar257/GCP-production-ML-systems#high_performance_ML_system): Implement transformer with transfer learning on IMDB sentiment analysis dataset
+[***Implementation***](https://github.com/Sylar257/Transformers-in-NLP#Implementation): Implement transformer with transfer learning on IMDB sentiment analysis dataset
 
 ## Overview
 
@@ -105,6 +105,17 @@ Similar to the **ResNet**, in the transformer’s encoder architecture there are
 
 **"X”** vector is the [positional encoding](https://github.com/Sylar257/Transformers-in-NLP#positional_encoding).
 
+## Overall_structure
+
 Of course, the layers are stacked for the **transformer**. We have **6-layer-stacking** for both *encoder* and *decoder* by the design of the [original paper](https://arxiv.org/abs/1706.03762). For illustration, if have a transformer of 2-layer-stacking:
 
 ![layer-stacking](images/layer-stacking.png)
+
+## Implementation
+
+When using the pre-trained models from `transformer` library, each model architecture need the following information:
+
+1. A **model class** too lead/store a particular pre-trained model.
+2. A **tokenizer class** to pre-process the data and make it compatible with our model of selection
+3. A **configuration class** to load/store the configuration of a particular model
+
