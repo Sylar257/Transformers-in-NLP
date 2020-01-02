@@ -30,7 +30,17 @@ FastAI library itself comes only with [AWS-LSTM](https://arxiv.org/abs/1708.0218
 
 More specifically, we are going integrate `FastAI` and the `transformers` library developed by *[Hugging Face](https://huggingface.co/)*, formerly known as `pytorch-transformers` and `pytorch-pretrained-bert`. Now this library contains over 40 *state-of-the-art* **pre-trained** NLP models which we simply can’t pass on. It also come with essential utilities such as *tokenizer*, *optimizer* and *learning rate scheduler*. However, in this repo, we will use most of utility functions from `fastai` library as it’s a bit more optimized.
 
+## Code Implementation
 
+You will find two Jupyter notebooks in this repo. In the [Transformer with no LM fine-tuning.ipynb](https://github.com/Sylar257/Transformers-in-NLP/blob/master/Transformer%20with%20no%20LM%20fine-tuning.ipynb) we will implement transformer with `FastAI` library without fine-tuning the language model separately. This notebook follows strictly the guide provided by [Maximilien Roberti](https://towardsdatascience.com/@maximilienroberti). Details of his guide can be found both in his [Medium post](https://towardsdatascience.com/fastai-with-transformers-bert-roberta-xlnet-xlm-distilbert-4f41ee18ecb2) as well as [Kaggle chanllange](https://www.kaggle.com/maroberti/fastai-with-transformers-bert-roberta). (Thumbs up for Maximilien Roberti)
+
+The reason why there exists a second notebook is because in Maximilien’s [implementation](https://www.kaggle.com/maroberti/fastai-with-transformers-bert-roberta) he mainly replaced the AWD_LSTM model from `FastAI` by **RoBERTa** from `Hugging Face`. According to Jeremy’s [ULMFiT paper](https://arxiv.org/pdf/1801.06146.pdf), if we’d fine tuning the encoder of the **RoBERTa** model as a language model before constructing the classifier for sentiment analysis task the accuracy could be even better. Hence, in the [Implement various Transformers with FastAI.ipynb]([https://github.com/Sylar257/Transformers-in-NLP/blob/master/Implement%20various%20Transformers%20with%20FastAI.ipynb](https://github.com/Sylar257/Transformers-in-NLP/blob/master/Implement various Transformers with FastAI.ipynb)) you will find the complete code for building two separate `databunch` for both language model and classification task as well as how can we apply *transfer learning* with `transformers` while taking advantage of the convenience of `FastAI` toolkit.
+
+To benchmark our result we will be using the classic [IMDb sentiment analysis dataset](https://s3.amazonaws.com/fast-ai-nlp/imdb). Following the standard ULMFiT approach, in the last [repo](https://github.com/Sylar257/ULMFiT-Sentiment-Analysis), we were able to reach **94.7%** accuracy which is slightly better than the state-of-the-art result in 2017 (94.1% accuracy). Now let’s challenge ourselves to push these results even further by implementing more advanced skills.
+
+In this repository you will find everything you need to incorporate transformers as the base architecture when using the `FastAI` framework. I will also try to provide you with the essential explanations of why we would make those customizations so that when you choose a different architecture you can replicate the process.
+
+# Key elements
 
 ## Self-Attention
 
@@ -113,9 +123,17 @@ Of course, the layers are stacked for the **transformer**. We have **6-layer-sta
 
 ## Implementation
 
-You will find two Jupiter notebooks in this repo. 
+You will find two Jupyter notebooks in this repo. In the [Transformer with no LM fine-tuning.ipynb](https://github.com/Sylar257/Transformers-in-NLP/blob/master/Transformer%20with%20no%20LM%20fine-tuning.ipynb) we will implement transformer with `FastAI` library without fine-tuning the language model separately. This notebook follows strictly the guide provided by [Maximilien Roberti](https://towardsdatascience.com/@maximilienroberti). Details of his guide can be found both in his [Medium post](https://towardsdatascience.com/fastai-with-transformers-bert-roberta-xlnet-xlm-distilbert-4f41ee18ecb2) as well as [Kaggle chanllange](https://www.kaggle.com/maroberti/fastai-with-transformers-bert-roberta). (Thumbs up for Maximilien Roberti)
+
+The reason why there exists a second notebook is because in Maximilien’s [implementation](https://www.kaggle.com/maroberti/fastai-with-transformers-bert-roberta) he mainly replaced the AWD_LSTM model from `FastAI` by **RoBERTa** from `Hugging Face`. According to Jeremy’s [ULMFiT paper](https://arxiv.org/pdf/1801.06146.pdf), if we’d fine tuning the encoder of the **RoBERTa** model as a language model before constructing the classifier for sentiment analysis task the accuracy could be even better. Hence, in the [Implement various Transformers with FastAI.ipynb]([https://github.com/Sylar257/Transformers-in-NLP/blob/master/Implement%20various%20Transformers%20with%20FastAI.ipynb](https://github.com/Sylar257/Transformers-in-NLP/blob/master/Implement various Transformers with FastAI.ipynb)) you will find the complete code for building two separate `databunch` for both language model and classification task as well as how can we apply *transfer learning* with `transformers` while taking advantage of the convenience of `FastAI` toolkit.
+
+To benchmark our result we will be using the classic [IMDb sentiment analysis dataset](https://s3.amazonaws.com/fast-ai-nlp/imdb). Following the standard ULMFiT approach, in the last [repo](https://github.com/Sylar257/ULMFiT-Sentiment-Analysis), we were able to reach **94.7%** accuracy which is slightly better than the state-of-the-art result in 2017 (94.1% accuracy). Now let’s challenge ourselves to push these results even further by implementing more advanced skills.
+
+In this repository you will find everything you need to incorporate transformers as the base architecture when using the `FastAI` framework. I will also try to provide you with the essential explanations of why we would make those customizations so that when you choose a different architecture you can replicate the process.
 
 
+
+### Transformer with no LM fine-tuning
 
 When using the pre-trained models from `transformer` library, each model architecture need the following information:
 
@@ -123,3 +141,172 @@ When using the pre-trained models from `transformer` library, each model archite
 2. A **tokenizer class** to pre-process the data and make it compatible with our model of selection
 3. A **configuration class** to load/store the configuration of a particular model
 
+We will start with the [**RoBERTa** transformer](https://ai.facebook.com/blog/roberta-an-optimized-method-for-pretraining-self-supervised-nlp-systems/) from Facebook. To incorporate customized model with `FastAI` is not as simple as plugging in the model architecture into the `Learner`. We have to construct the proper dataloader(in `FastAI` known as `databunch`) so that the transformer is getting what its expecting to get.
+
+#### Step.1 Customize our processors:
+
+The important thing here is that `FastAI` uses processors to perform repetitive tasks when creating DataBunch. A set of default processors are performed for [fastai.textlearners](https://github.com/fastai/fastai/blob/67308f15394bd8189eb9b3fbb3db770c6c78039e/fastai/text/data.py#L283). For example:
+
+```python
+# FastAI use various processors to perform repeatative tasks in data pipeline
+
+def _get_processor(tokenizer:Tokenizer=None, vocab:Vocab=None, chunksize:int=10000, max_vocab:int=60000,
+                   min_freq:int=2, mark_fields:bool=False, include_bos:bool=True, include_eos:bool=False):
+    return [TokenizeProcessor(tokenizer=tokenizer, chunksize=chunksize, 
+                              mark_fields=mark_fields, include_bos=include_bos, include_eos=include_eos),
+            NumericalizeProcessor(vocab=vocab, max_vocab=max_vocab, min_freq=min_freq)]
+```
+
+Here two default processors are invoked: tokenizer and numericalizer. The two classes are defined as such:
+
+```python
+class TokenizeProcessor(PreProcessor):
+    "`PreProcessor` that tokenizes the texts in `ds`."
+    def __init__(self, ds:ItemList=None, tokenizer:Tokenizer=None, chunksize:int=10000, 
+                 mark_fields:bool=False, include_bos:bool=True, include_eos:bool=False):
+        self.tokenizer,self.chunksize,self.mark_fields = ifnone(tokenizer, Tokenizer()),chunksize,mark_fields
+        self.include_bos, self.include_eos = include_bos, include_eos
+
+    def process_one(self, item):
+        return self.tokenizer._process_all_1(_join_texts([item], self.mark_fields, self.include_bos, self.include_eos))[0]
+
+    def process(self, ds):
+        ds.items = _join_texts(ds.items, self.mark_fields, self.include_bos, self.include_eos)
+        tokens = []
+        for i in progress_bar(range(0,len(ds),self.chunksize), leave=False):
+            tokens += self.tokenizer.process_all(ds.items[i:i+self.chunksize])
+        ds.items = tokens
+
+class NumericalizeProcessor(PreProcessor):
+    "`PreProcessor` that numericalizes the tokens in `ds`."
+    def __init__(self, ds:ItemList=None, vocab:Vocab=None, max_vocab:int=60000, min_freq:int=3):
+        vocab = ifnone(vocab, ds.vocab if ds is not None else None)
+        self.vocab,self.max_vocab,self.min_freq = vocab,max_vocab,min_freq
+
+    def process_one(self,item): return np.array(self.vocab.numericalize(item), dtype=np.int64)
+    def process(self, ds):
+        if self.vocab is None: self.vocab = Vocab.create(ds.items, self.max_vocab, self.min_freq)
+        ds.vocab = self.vocab
+        super().process(ds)
+```
+
+This is our IMDb text after tokenized with `Fastai` default tokenizer:
+
+![fastai_processor](images/fastai_processor.png)
+
+and this is IMDb text tokenized with `transformer` `RoBERTa` tokenizer:
+
+![transformer_processor](images/transformer_processor.png)
+
+It’s easy to see that the `Hugging Face` `RoBERTa` is expecting different tokenization and that we need to customize the processors. What we need to do is essentially grab the tokenizer, vocabulary, special tokens and numericalizer from `Hugging Face` and put the `FastAI` wrapper on to make it a compatible class. Detail of these step please refer to the [Jupyter notebook](https://github.com/Sylar257/Transformers-in-NLP/blob/master/Transformer%20with%20no%20LM%20fine-tuning.ipynb).
+
+#### Step.2 Create Our `DataBunch` for classification:
+
+We can easily find the IMDb dataset once we installed the `FastAI` library by calling `untar_data(URLs.IMDb)`. This would return us a `PosixPath` object under which path we can find three useful files: *train, test and unsup.*
+
+In this notebook, we are going to ignore the *unsup* folder and construct `DataBunch` only using *train* and *test* folders. 
+
+**\*Note that for `transformer_processor` we need to include `OpenFileProcessor()`. This is because we are reading from different folders instead of straight from dataframes or .csv files.**
+
+```python
+# processors need to be in the right order
+transformer_processor = [OpenFileProcessor(),tokenize_processor, numericalize_processor]
+```
+
+Then create our `DataBunch`:
+
+```python
+# we can play around with the batch_size as long as the GPU can take it
+bs = 16
+data_clas = (TextList.from_folder(path, vocab=transformer_vocab, processor=transformer_processor)                       # specify the path
+           .filter_by_folder(include=['train','test']) # exclude other folders
+           .split_by_folder(valid='test')              # split by train and valid folder (that only keeps 'train' and 'test' so no need to filter)
+           .label_from_folder(classes=['neg', 'pos'])  # label them all with their folders
+           .databunch(bs=bs))                          # convert to databunch for the learner later
+```
+
+#### Step.3 Create our customized transformer model:
+
+This step is quite straight forward. Get the model architecture itself provided by `Hugging Face` and make sure the `forward` function provides the right information. 
+
+```python
+# defining our model architecture 
+class CustomTransformerModel(nn.Module):
+    def __init__(self, transformer_model: PreTrainedModel):
+        super(CustomTransformerModel,self).__init__()
+        self.transformer = transformer_model
+        
+    def forward(self, input_ids, attention_mask=None):
+        
+        #attention_mask = (input_ids!=1).type(input_ids.type()) # Test attention_mask for RoBERTa
+        
+        logits = self.transformer(input_ids,
+                                attention_mask = attention_mask)[0]   
+        return logits
+
+# hyper parameter setup
+config = config_class.from_pretrained(pretrained_model_name)
+config.num_labels = 2
+    
+    
+# Create customized transformer model
+transformer_model = model_class.from_pretrained(pretrained_model_name, config = config)
+custom_transformer_model = CustomTransformerModel(transformer_model = transformer_model)
+```
+
+Pay attention to what the `forward` function returns as we will be modifying this part once we get to the [next notebook](https://github.com/Sylar257/Transformers-in-NLP/blob/master/Implement%20various%20Transformers%20with%20FastAI.ipynb) and start to build language models. We should also get the *hyper-parameters* provided by `Hugging Face` by calling `config_class.from_pretrained(pretrained_model_name)`. Change the `config.num_label = 2` as we only have **positive** or **negative** in IMDb prediction and then we are good to go.
+
+#### Step.4 Create Learner object:
+
+A `DataBunch` and a `architecure` are two object we must provide in order to create a `Learner` object in `FastAI`. There is one more thing we consider specify here that is our optimizer. `FastAI` uses [AdamW](https://www.fast.ai/2018/07/02/adam-weight-decay/#adamw) by default and it was pointed out by Maximilien that for reproducing *BertAdam* specific behavior we have to set `correct_bias = False`. Hence we use the `partial( )` function:
+
+```python
+# customize AdamW
+CustomAdamW = partial(AdamW, correct_bias=False)
+
+# Create learner
+learner = Learner(data_clas, 
+                  custom_transformer_model, 
+                  opt_func = CustomAdamW, 
+                  metrics=[accuracy, error_rate])
+
+# Show graph of learner stats and metrics after each epoch.
+learner.callbacks.append(ShowGraph(learner))
+```
+
+We are also going to split the layers. `FastAI` employs the concept of layer groups in that we divide our layers into a few groups so that later we **have the freedom to freeze/unfreeze their weight or applier different learning rates for different layer groups**.
+
+```python
+# For roberta-base
+list_layers = [learner.model.transformer.roberta.embeddings,
+              learner.model.transformer.roberta.encoder.layer[0],
+              learner.model.transformer.roberta.encoder.layer[1],
+              learner.model.transformer.roberta.encoder.layer[2],
+              learner.model.transformer.roberta.encoder.layer[3],
+              learner.model.transformer.roberta.encoder.layer[4],
+              learner.model.transformer.roberta.encoder.layer[5],
+              learner.model.transformer.roberta.encoder.layer[6],
+              learner.model.transformer.roberta.encoder.layer[7],
+              learner.model.transformer.roberta.encoder.layer[8],
+              learner.model.transformer.roberta.encoder.layer[9],
+              learner.model.transformer.roberta.encoder.layer[10],
+              learner.model.transformer.roberta.encoder.layer[11],
+              learner.model.transformer.roberta.pooler]
+
+# use the defaul split function from Learner class
+learner.split(list_layers)
+```
+
+#### Step.5 Training
+
+Yeah! After all the hard work of setting things up, our favorite part of deep learning has come!
+
+We are going to start with a frozen model by calling `learner.freeze()` , find the optimal learning rate `learner.lr_find()` and `learner.recorder.plot(skip_end = 10, suggestion=True)` and finally `learner.fit_one_cycle()` to do *learning rate annealing*.
+
+![lr_find](images/lr_find.png)
+
+As suggested by Jeremy Howard in his [ULMFiT paper](https://arxiv.org/pdf/1801.06146.pdf) we consider gradually unfreeze the layers 2 groups at a time, and repeat the above process.
+
+We are able to achieve **95.3%** accuracy which higher than the** 94.1%**(2017 state-of-the-art) and 94.7% ULMFiT with AWD_LSTM bacs architecture.
+
+![training_result_notebook_1](/home/projectx/Documents/Transformers-in-NLP/images/training_result_notebook_1.png)
