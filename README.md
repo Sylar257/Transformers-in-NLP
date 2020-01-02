@@ -113,6 +113,10 @@ Of course, the layers are stacked for the **transformer**. We have **6-layer-sta
 
 ## Implementation
 
+You will find two Jupiter notebooks in this repo. 
+
+
+
 When using the pre-trained models from `transformer` library, each model architecture need the following information:
 
 1. A **model class** too lead/store a particular pre-trained model.
