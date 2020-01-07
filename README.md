@@ -6,13 +6,15 @@ In this note book we will be look in very close details of the famous **transfor
 
 [***Overview***](https://github.com/Sylar257/Transformers-in-NLP#overview): Current research trends, incentives of this repo, and our objectives
 
-[***Self-Attention***](https://github.com/Sylar257/Transformers-in-NLP#self-attention): how the self-attention block works in deep learning architectures
+[***Model selection***](https://github.com/Sylar257/Transformers-in-NLP#model_selection): Given so many high performance models, how do we choose which one to use?
 
-[***Positional Encoding***](https://github.com/Sylar257/Transformers-in-NLP#positional_encoding): representing the order of the sequence using positional encoding
+[***Self-Attention***](https://github.com/Sylar257/Transformers-in-NLP#self-attention): How the self-attention block works in deep learning architectures
 
-[***Residual connection***](https://github.com/Sylar257/Transformers-in-NLP#residuals): residuals are implemented for better learning efficiency and loss convergence
+[***Positional Encoding***](https://github.com/Sylar257/Transformers-in-NLP#positional_encoding): Representing the order of the sequence using positional encoding
 
-[***Transformer***](https://github.com/Sylar257/Transformers-in-NLP#Overall_structure): high-level structure of the transformer
+[***Residual connection***](https://github.com/Sylar257/Transformers-in-NLP#residuals): Residuals are implemented for better learning efficiency and loss convergence
+
+[***Transformer***](https://github.com/Sylar257/Transformers-in-NLP#Overall_structure): High-level structure of the transformer
 
 [***Implementation***](https://github.com/Sylar257/Transformers-in-NLP#Implementation): Implement transformer with transfer learning on IMDB sentiment analysis dataset
 
@@ -40,7 +42,19 @@ To benchmark our result we will be using the classic [IMDb sentiment analysis da
 
 In this repository you will find everything you need to incorporate transformers as the base architecture when using the `FastAI` framework. I will also try to provide you with the essential explanations of why we would make those customizations so that when you choose a different architecture you can replicate the process.
 
-# Key elements
+## Model_selection
+
+BERT, GPT, GPT-2, Transformer-XL, XLNet, XLM, RoBERTa, DistilBERT, ALBERT, XLM-RoBERTa, the list goes on. There are so many good performing NLP models out there all available with pre-trained weight on huge datasets. I could be overwhelming to decide which model to use. While this repo focuses on the Transformer family, here is come quick tips towards choosing your model.
+
+BERT is certainly outperforming several NLP models that was previously state-of-the-art. Its performance improvement is largely attributed to its bidirectional transformer using Masked Language Model. RoBERTa, DistilBERT and XLNet are three powerful models that are popularly used and their various versions are available in `Hugging Face`. RoBERTa is a retraining of BERT with 1000% more training data and stronger compute power. In addition, dynamic masking is used during training. DistilBERT trains similarly to BERT but it has only half the number of parameters by using a technique called distillation. DistilBERT is not necessary more accurate then its counterparts but it requires less time to train and it’s faster during inference time. XLNet is the heavy weight player, it’s trained with larger datasets with much stronger computing power and longer time (about 5 times more than BERT). Moreover, during training time, XLNet doesn’t adopt masked language model, unlike BERT/RoBERTa/DistilBERT, but uses permutation language modeling where all tokens are predicted but in random order. The benefit of this is that the model could potentially learn the dependencies between all words. (with masked language model, dependencies between masked words are lost)
+
+#### Conclusion
+
+BERT/RoBERTa are very good baseline models are should perform fairly well for most NLP tasks. XLNet’s permutation based training could potentially give us a performance boost but the fine-tuning and inference  takes more time. If we want fast inference speed, go for DistilBERT.
+
+
+
+# Transformer Key Elements
 
 ## Self-Attention
 
