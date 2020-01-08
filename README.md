@@ -145,9 +145,19 @@ To benchmark our result we will be using the classic [IMDb sentiment analysis da
 
 In this repository you will find everything you need to incorporate transformers as the base architecture when using the `FastAI` framework. I will also try to provide you with the essential explanations of why we would make those customizations so that when you choose a different architecture you can replicate the process.
 
+#### Walkthrough of 3 notebooks
+
+[***RoBERTa without LM tuning***](https://github.com/Sylar257/Transformers-in-NLP#RoBERTa_without_LM_fine-tuning): Training RoBERTa sequence classifier without fine-tuning the language model
+
+[***RoBERTa with ULMFiT***](https://github.com/Sylar257/Transformers-in-NLP#roberta_ULMFiT): Follow ULMFiT strategy by fine-tuning RoBERTa using Masked Language Modeling before training the actual sequence classifier
+
+[***XLNet***](https://github.com/Sylar257/Transformers-in-NLP#XLNet): Fine tuning XLNet for IMDb sentiment analysis
 
 
-### Transformer with no LM fine-tuning
+
+
+
+### RoBERTa_without_LM_fine-tuning
 
 When using the pre-trained models from `transformer` library, each model architecture need the following information:
 
@@ -323,4 +333,12 @@ As suggested by Jeremy Howard in his [ULMFiT paper](https://arxiv.org/pdf/1801.0
 
 We are able to achieve **95.3%** accuracy which higher than the** 94.1%**(2017 state-of-the-art) and 94.7% ULMFiT with AWD_LSTM bacs architecture.
 
-![training_result_notebook_1](/home/projectx/Documents/Transformers-in-NLP/images/training_result_notebook_1.png)
+![training_result_notebook_1](images/training_result_notebook_1.png)
+
+## RoBERTa_ULMFiT
+
+
+
+
+
+## XLNet
