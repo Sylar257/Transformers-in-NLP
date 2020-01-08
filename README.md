@@ -278,7 +278,7 @@ transformer_model = model_class.from_pretrained(pretrained_model_name, config = 
 custom_transformer_model = CustomTransformerModel(transformer_model = transformer_model)
 ```
 
-Pay attention to what the `forward` function returns as we will be modifying this part once we get to the [next notebook](https://github.com/Sylar257/Transformers-in-NLP/blob/master/Implement%20various%20Transformers%20with%20FastAI.ipynb) and start to build language models. We should also get the *hyper-parameters* provided by `Hugging Face` by calling `config_class.from_pretrained(pretrained_model_name)`. Change the `config.num_label = 2` as we only have **positive** or **negative** in IMDb prediction and then we are good to go.
+Pay attention to what the `forward` function returns as we will be modifying this part once we get to the [next notebook](https://github.com/Sylar257/Transformers-in-NLP/blob/master/Transformer training with Language model tuning.ipynb) and start to build language models. We should also get the *hyper-parameters* provided by `Hugging Face` by calling `config_class.from_pretrained(pretrained_model_name)`. Change the `config.num_label = 2` as we only have **positive** or **negative** in IMDb prediction and then we are good to go.
 
 #### Step.4 Create Learner object:
 
@@ -331,11 +331,55 @@ We are going to start with a frozen model by calling `learner.freeze()` , find t
 
 As suggested by Jeremy Howard in his [ULMFiT paper](https://arxiv.org/pdf/1801.06146.pdf) we consider gradually unfreeze the layers 2 groups at a time, and repeat the above process.
 
-We are able to achieve **95.3%** accuracy which higher than the** 94.1%**(2017 state-of-the-art) and 94.7% ULMFiT with AWD_LSTM bacs architecture.
+We are able to achieve **95.3%** accuracy which higher than the **94.1%** (2017 state-of-the-art) and **94.7%** ULMFiT with AWD_LSTM bacs architecture.
 
 ![training_result_notebook_1](images/training_result_notebook_1.png)
 
 ## RoBERTa_ULMFiT
+
+We have seen the [**the first notebook**](https://github.com/Sylar257/Transformers-in-NLP/blob/master/Transformer%20with%20no%20LM%20fine-tuning.ipynb) that by training a RoBERTa for sequence classification performs significantly better than the ULMFiT with AWD_LSTM. At point, we are naturally curious about what happens if we apply the ULMFiT training stratgy to the **RoBERTa** model. The “U” in ULMFiT stands for ‘universal’ anyway.
+
+Don’t worry. You will find everything you need from fine-tuning language model to transfer learning to sequence classification in [**the second notebook**](https://github.com/Sylar257/Transformers-in-NLP/blob/master/Transformer training with Language model tuning.ipynb). The code is heavily documented and I will also provide a walkthrough of the critical steps in the following section.
+
+It’s important to notice that *we can’t naively fine tune the **RoBERTa** language model the same way we dealt with **AWD_LSTM**.* The reason is that, like all BERT model family, **RoBERTa** needs to be tune with *masked language modeling* in order cater to the bidirectional property of BERT. The essential change we have to make is that, instead training the text data in forward/backward direction (we do this with AWD_LSTM), we are going to *mask **15%** of labeling* during fine tuning. This 15% ratio is per proprosed in the [original paper](https://arxiv.org/abs/1907.11692)  and could be adjust by the `RoBERTa_HP.mlm_probability` in the code if so desire.
+
+### 1. Create a new dataset just for language model fine tuning
+
+When training the classifier for IMDb sentiment classification, we made use of the text files under both `data/imdb/train` as well as `data/imdb/test`  and we have ignore all the text files in the `data/imdb/unsup` folder since they are not labelled. The good news is, now we can make use of the `data/imbd/unsup` folder since fine-tuning language model is an unsupervised task and we should gather all text we can put our hands on to make our **RoBERTa** language head more *IMDb-like*.
+
+Objective: we want to grab all **seperate** `.txt` files under **train**, **test** and **unsup** folders into one single file. Randomly split it 90-10, so that we could use the 90% for training and 10% for evaluating our language model. Below is a simple piece of code that allows you do just that:
+
+```python
+import random
+
+# combine all the .txt files in the train/pos and train/neg folders
+train_files = glob.glob(os.path.join((path/'train/*'),'*.txt'))
+random.shuffle(train_files)
+
+# split randomly 90% data to train_data_LM file and 10% to test_data_LM file
+with open('train_data_LM.txt', 'ab') as outfile:
+    for f in train_files[:int(len(train_files)*0.9)]:
+        with open(f, 'rb') as infile:
+            outfile.write(infile.read())
+with open('test_data_LM.txt',  'ab') as outfile:
+    for f in train_files[int(len(train_files)*0.9):]:
+        with open(f, 'rb') as infile:
+            outfile.write(infile.read())
+```
+
+Note that, this is just grabing all `.txt` files under `data/imdb/train` folder. You would want to do the same for `data/imdb/test` and `data/imdb/unsup`. 
+
+Take a look at the number of files in each folder, we would find that by simple including the `unsup` folder, we have efficiently **doubled** the size of our language model dataset.
+
+![train_test_unsup](images/train_test_unsup.png)
+
+#### 2. Hyper-parameters for training
+
+
+
+
+
+
 
 
 
