@@ -38,7 +38,7 @@ You will find two Jupyter notebooks in this repo. In the [Transformer with no LM
 
 The reason why there exists a second notebook is because in Maximilien’s [implementation](https://www.kaggle.com/maroberti/fastai-with-transformers-bert-roberta) he mainly replaced the AWD_LSTM model from `FastAI` by **RoBERTa** from `Hugging Face`. According to Jeremy’s [ULMFiT paper](https://arxiv.org/pdf/1801.06146.pdf), if we’d fine tuning the encoder of the **RoBERTa** model as a language model before constructing the classifier for sentiment analysis task the accuracy could be even better. Hence, in the [Implement various Transformers with FastAI.ipynb]([https://github.com/Sylar257/Transformers-in-NLP/blob/master/Implement%20various%20Transformers%20with%20FastAI.ipynb](https://github.com/Sylar257/Transformers-in-NLP/blob/master/Implement various Transformers with FastAI.ipynb)) you will find the complete code for building two separate `databunch` for both language model and classification task as well as how can we apply *transfer learning* with `transformers` while taking advantage of the convenience of `FastAI` toolkit.
 
-To benchmark our result we will be using the classic [IMDb sentiment analysis dataset](https://s3.amazonaws.com/fast-ai-nlp/imdb). Following the standard ULMFiT approach, in the last [repo](https://github.com/Sylar257/ULMFiT-Sentiment-Analysis), we were able to reach **94.7%** accuracy which is slightly better than the state-of-the-art result in 2017 (94.1% accuracy). Now let’s challenge ourselves to push these results even further by implementing more advanced skills.
+To benchmark our result we will be using the classic [IMDb sentiment analysis dataset](https://ai.stanford.edu/~ang/papers/acl11-WordVectorsSentimentAnalysis.pdf). Following the standard ULMFiT approach, in the last [repo](https://github.com/Sylar257/ULMFiT-Sentiment-Analysis), we were able to reach **94.7%** accuracy which is slightly better than the state-of-the-art result in 2017 (94.1% accuracy). Now let’s challenge ourselves to push these results even further by implementing more advanced skills.
 
 In this repository you will find everything you need to incorporate transformers as the base architecture when using the `FastAI` framework. I will also try to provide you with the essential explanations of why we would make those customizations so that when you choose a different architecture you can replicate the process.
 
@@ -141,7 +141,7 @@ You will find two Jupyter notebooks in this repo. In the [**Transformer with no 
 
 The reason why there exists a second notebook is because in Maximilien’s [implementation](https://www.kaggle.com/maroberti/fastai-with-transformers-bert-roberta) he mainly replaced the AWD_LSTM model from `FastAI` by **RoBERTa** from `Hugging Face`. According to Jeremy’s [ULMFiT paper](https://arxiv.org/pdf/1801.06146.pdf), if we’d fine tuning the encoder of the **RoBERTa** model as a language model before constructing the classifier for sentiment analysis task the accuracy could be even better. Hence, in the [**Transformer training with Language model tuning.ipynb**](https://github.com/Sylar257/Transformers-in-NLP/blob/master/Transformer%20training%20with%20Language%20model%20tuning.ipynb) you will find the complete code for building two separate `databunch` for both language model and classification task as well as how can we apply *transfer learning* with `transformers` while taking advantage of the convenience of `FastAI` toolkit.
 
-To benchmark our result we will be using the classic [IMDb sentiment analysis dataset](https://s3.amazonaws.com/fast-ai-nlp/imdb). Following the standard ULMFiT approach, in the last [repo](https://github.com/Sylar257/ULMFiT-Sentiment-Analysis), we were able to reach **94.7%** accuracy which is slightly better than the state-of-the-art result in 2017 (94.1% accuracy). Now let’s challenge ourselves to push these results even further by implementing more advanced skills.
+To benchmark our result we will be using the classic [IMDb sentiment analysis dataset](https://ai.stanford.edu/~ang/papers/acl11-WordVectorsSentimentAnalysis.pdf). Following the standard ULMFiT approach, in the last [repo](https://github.com/Sylar257/ULMFiT-Sentiment-Analysis), we were able to reach **94.7%** accuracy which is slightly better than the state-of-the-art result in 2017 (94.1% accuracy). Now let’s challenge ourselves to push these results even further by implementing more advanced skills.
 
 In this repository you will find everything you need to incorporate transformers as the base architecture when using the `FastAI` framework. I will also try to provide you with the essential explanations of why we would make those customizations so that when you choose a different architecture you can replicate the process.
 
@@ -375,11 +375,58 @@ Take a look at the number of files in each folder, we would find that by simple 
 
 #### 2. Hyper-parameters for training
 
+We will create a class casll `training_param()` and assign any training/hyper-parameters as it attibutes:
+
+```python
+class training_param():
+    def __init__(self):
+        
+        # general parameters
+        self.train_data_file = 'train_data_LM.txt'   # train file name
+        self.eval_data_file = 'test_data_LM.txt'     # test  file name
+        self.model_name_or_path = 'roberta-base'# change this if using other models
+        self.block_size = 512 # The training dataset will be truncated in block of this size for training. Default to the model max input length for single sentence inputs (take into account special tokens)."
+        self.save_total_limit = 15              # total number of checkpoints we allow
+        self.output_dir = os.path.join(os.getcwd(),'fine_tuning_LM')    # output directory for checkpoints and saves
+        self.train_batch_size = 4
+        self.eval_batch_size  = 4
+        self.num_train_epochs = 5               # no. of epochs
+        self.logging_steps    = 4000
+        self.save_steps       = 4000
+        
+        # optimizer parameters
+        self.learning_rate    = 3e-5
+        self.weight_decay     = 0.0
+        self.adam_epsilon     = 1e-8
+        self.max_grad_norm    = 1.0             # max gradient norm
+        self.warmup_steps     = 0               # linear/cosine warmup over warmup_steps
+        
+        # model parameters
+        self.fp16             = False
+        self.fp16_opt_level   = 'O1'            # For fp16: Apex AMP optimization level selected in ['O0', 'O1', 'O2', and 'O3']. See details at https://nvidia.github.io/apex/amp.html
+        self.mlm              = True            # Training with masked-language modeling loss instead of vanilla language modeling
+        self.mlm_probability  = 0.15            # Ratio of tokens to mask for masked language modeling loss
+        self.device           = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        
+        # flags
+        self.evaluate_during_training = False   # True to monitor training for each checkpoint saving, but this would time consuming        
+        self.overwrite_cache          = True
+        self.do_train                 = True
+        self.do_eval                  = True
+        self.do_lower_case            = False   # false to training RoBERTa model
+        self.overwrite_output_dir     = True    # overwrite the content of the output directory
+        self.no_cuda                  = False   # Avoid using CUDA when it's available
+        self.eval_all_checkpoints     = False    # Evaluate all checkpoints starting with the same prefix as model_name_or_path ending and ending with step number
+        
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+RoBERTa_HP = training_param()
+```
+
+The important things here is to point the `train_data_file` and the `eval_data_file` to the two files we created in our last step. Set your desired model architecture from [`HuggingFace/models`](https://huggingface.co/models).
 
 
 
-
-
+[7, 22, 27, 28, 10
 
 
 
