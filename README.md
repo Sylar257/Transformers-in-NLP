@@ -385,17 +385,17 @@ class training_param():
         self.train_data_file = 'train_data_LM.txt'   # train file name
         self.eval_data_file = 'test_data_LM.txt'     # test  file name
         self.model_name_or_path = 'roberta-base'# change this if using other models
-        self.block_size = 512 # The training dataset will be truncated in block of this size for training. Default to the model max input length for single sentence inputs (take into account special tokens)."
+        self.block_size = 128 # The training dataset will be truncated in block of this size for training. Default to the model max input length for single sentence inputs (take into account special tokens)."
         self.save_total_limit = 15              # total number of checkpoints we allow
         self.output_dir = os.path.join(os.getcwd(),'fine_tuning_LM')    # output directory for checkpoints and saves
         self.train_batch_size = 4
         self.eval_batch_size  = 4
-        self.num_train_epochs = 5               # no. of epochs
+        self.num_train_epochs = 4               # no. of epochs
         self.logging_steps    = 4000
         self.save_steps       = 4000
         
         # optimizer parameters
-        self.learning_rate    = 3e-5
+        self.learning_rate    = 2e-5
         self.weight_decay     = 0.0
         self.adam_epsilon     = 1e-8
         self.max_grad_norm    = 1.0             # max gradient norm
@@ -424,9 +424,198 @@ RoBERTa_HP = training_param()
 
 The important things here is to point the `train_data_file` and the `eval_data_file` to the two files we created in our last step. Set your desired model architecture from [`HuggingFace/models`](https://huggingface.co/models).
 
+Things to twick for better performance:
+
+```python
+self.block_size  # The training dataset will be truncated in block of this size for training. Size 128 was recommended by the paper for IMDb dataset. Maximum here is 512
+self.num_train_epochs # Tunable for obvious reasons, usually tuned together with self.learning_rate
+self.fp16 # NVIDIA's mix-precision training. There are papers reporting that mix-precision training sometime not only speed up the training process but also increase model performance
+self.mlm_probability # tunable for different masking ratio but shouldn't be too far from 0.15
+self.do_lower_case  # always check HuggingFace documentation to see if this is an available choice for your model of choice
+```
+
+#### 3. Create utility functions
+
+To create PyTorch `Dataset` object with the right encoding:
+
+```python
+class TextDataset(Dataset):
+    def __init__(self, tokenizer, HP, file_path="fine_tuning_LM", block_size=128):
+        assert os.path.isfile(file_path)
+        directory, filename = os.path.split(file_path)
+        cached_features_file = os.path.join(
+            directory, HP.model_name_or_path + "_cached_lm_" + str(block_size) + "_" + filename
+        )
+
+        if os.path.exists(cached_features_file) and not HP.overwrite_cache:
+            logger.info("Loading features from cached file %s", cached_features_file)
+            with open(cached_features_file, "rb") as handle:
+                self.examples = pickle.load(handle)
+        else:
+            logger.info("Creating features from dataset file at %s", directory)
+
+            self.examples = []
+            with open(file_path, encoding="utf-8") as f:
+                text = f.read()
+
+            tokenized_text = tokenizer.convert_tokens_to_ids(tokenizer.tokenize(text))
+
+            for i in range(0, len(tokenized_text) - block_size + 1, block_size):  # Truncate in block of block_size
+                self.examples.append(tokenizer.build_inputs_with_special_tokens(tokenized_text[i : i + block_size]))
+            # Note that we are loosing the last truncated example here for the sake of simplicity (no padding)
+            # If your dataset is small, first you should loook for a bigger one :-) and second you
+            # can change this behavior by adding (model specific) padding.
+
+            logger.info("Saving features into cached file %s", cached_features_file)
+            with open(cached_features_file, "wb") as handle:
+                pickle.dump(self.examples, handle, protocol=pickle.HIGHEST_PROTOCOL)
+
+    def __len__(self):
+        return len(self.examples)
+
+    def __getitem__(self, item):
+        return torch.tensor(self.examples[item])
 
 
-[7, 22, 27, 28, 10
+def load_and_cache_examples(HP, tokenizer, evaluate=False):
+    dataset = TextDataset(
+        tokenizer,
+        HP,
+        file_path=HP.eval_data_file if evaluate else HP.train_data_file,
+        block_size=HP.block_size,
+    )
+    return dataset
+```
+
+This is specific to BERT family model trainings.(If using **XLNet**, consifer *permutation language modeling*):
+
+```python
+def mask_tokens(inputs: torch.Tensor, tokenizer: PreTrainedTokenizer, HP) -> Tuple[torch.Tensor, torch.Tensor]:
+    """ Prepare masked tokens inputs/labels for masked language modeling: 80% MASK, 10% random, 10% original. """
+    labels = inputs.clone()
+    # We sample a few tokens in each sequence for masked-LM training (with probability HP.mlm_probability defaults to 0.15 in Bert/RoBERTa)
+    probability_matrix = torch.full(labels.shape, HP.mlm_probability)
+    special_tokens_mask = [
+        tokenizer.get_special_tokens_mask(val, already_has_special_tokens=True) for val in labels.tolist()
+    ]
+    probability_matrix.masked_fill_(torch.tensor(special_tokens_mask, dtype=torch.bool), value=0.0)
+    masked_indices = torch.bernoulli(probability_matrix).bool()
+    labels[~masked_indices] = -100  # We only compute loss on masked tokens
+
+    # 80% of the time, we replace masked input tokens with tokenizer.mask_token ([MASK])
+    indices_replaced = torch.bernoulli(torch.full(labels.shape, 0.8)).bool() & masked_indices
+    inputs[indices_replaced] = tokenizer.convert_tokens_to_ids(tokenizer.mask_token)
+
+    # 10% of the time, we replace masked input tokens with random word
+    indices_random = torch.bernoulli(torch.full(labels.shape, 0.5)).bool() & masked_indices & ~indices_replaced
+    random_words = torch.randint(len(tokenizer), labels.shape, dtype=torch.long)
+    inputs[indices_random] = random_words[indices_random]
+
+    # The rest of the time (10% of the time) we keep the masked input tokens unchanged
+    return inputs, labels
+```
+
+#### 4. Create `config` , `tokenizer`, `model` and train it
+
+Super simple steps to create our pre-trained models:
+
+```python
+_, tokenizer_class, config_class , model_class = MODEL_CLASSES[model_type]
+
+config = config_class.from_pretrained(RoBERTa_HP.model_name_or_path,
+                                      do_lower_case = RoBERTa_HP.do_lower_case)
+tokenizer = tokenizer_class.from_pretrained(RoBERTa_HP.model_name_or_path,
+                                            do_lower_case = RoBERTa_HP.do_lower_case)
+
+model = model_class.from_pretrained(
+        RoBERTa_HP.model_name_or_path,
+        config  = config)
+model.to(RoBERTa_HP.device);
+```
+
+#### 5. Training the model and save its encoder
+
+The training of the BERT family models are adopted from the [HuggingFace finetuning](https://github.com/huggingface/transformers/blob/master/examples/run_lm_finetuning.py). I have kept the essential elements required for this particular training and trimmed the excess code that we are not likely to use:
+
+```python
+# The actual training/eval loops
+if RoBERTa_HP.do_train:
+    
+    global_step, tr_loss = train(RoBERTa_HP, train_dataset, model, tokenizer)
+    logger.info(" global_step = %s, average loss = %s", global_step, tr_loss)
+    
+    # Create output directory if needed
+    if not os.path.exists(RoBERTa_HP.output_dir):
+        os.makedirs(RoBERTa_HP.output_dir)
+        
+    logger.info("Saving model checkpoint to %s", RoBERTa_HP.output_dir)
+    
+    # Save a trained model, configuration and tokenizer using `save_pretrained()`.
+    # They can then be reloaded using `from_pretrained()`
+    model_to_save = (
+        model.module if hasattr(model, "module") else model
+    )  # Take care of distributed/parallel training
+    model_to_save.save_pretrained(RoBERTa_HP.output_dir)
+    tokenizer.save_pretrained(RoBERTa_HP.output_dir)
+
+    # Good practice: save your training arguments together with the trained model
+    torch.save(RoBERTa_HP, os.path.join(RoBERTa_HP.output_dir, "training_args.bin"))
+
+    # Load a trained model and vocabulary that you have fine-tuned
+    model = model_class.from_pretrained(RoBERTa_HP.output_dir)
+    tokenizer = tokenizer_class.from_pretrained(RoBERTa_HP.output_dir, do_lower_case=RoBERTa_HP.do_lower_case)
+    model.to(RoBERTa_HP.device)
+
+results = {}
+if RoBERTa_HP.do_eval:
+    checkpoints = [RoBERTa_HP.output_dir]
+    if RoBERTa_HP.eval_all_checkpoints:
+        checkpoints = list(
+            os.path.dirname(c) for c in sorted(glob.glob(RoBERTa_HP.output_dir + "/**/" + WEIGHTS_NAME, recursive=True))
+        )
+        logging.getLogger("transformers.modeling_utils").setLevel(logging.WARN)  # Reduce logging
+    
+    logger.info("Evaluate the following checkpoints: %s", checkpoints)
+    for checkpoint in checkpoints:
+        global_step = checkpoint.split("-")[-1] if len(checkpoints) > 1 else ""
+        prefix = checkpoint.split("/")[-1] if checkpoint.find("checkpoint") != -1 else ""
+
+        model = model_class.from_pretrained(checkpoint)
+        model.to(RoBERTa_HP.device)
+        result = evaluate(RoBERTa_HP, model, tokenizer, prefix=prefix)
+        result = dict((k + "_{}".format(global_step), v) for k, v in result.items())
+        results.update(result)
+
+    print(results)
+```
+
+Lastly step for language model fine-tuning, save the encoder of our model so that we can make use of it when we create our classifier later:
+
+```python
+# get the model's encoder and save its weights
+encoder = get_model(model).roberta
+
+name = 'RoBERTa_encoder_IMDB'
+torch.save(encoder.state_dict(), path/'models'/f'{name}.pth')
+```
+
+#### 6. Create IMDb sentiment analysis classifer with fine-tuned encoder weights
+
+The process of creating a **FastAI** `Learner` with **Hugging Face** `tokenizer` and `numericalizer` is similar to the [previsou notebook](https://github.com/Sylar257/Transformers-in-NLP/blob/master/Transformer%20with%20no%20LM%20fine-tuning.ipynb), so I will omit the code here.
+
+Create a new IMDb classifier after loading the weights from our previous encoder:
+
+```python
+# This would only change the encoder weights
+name = 'RoBERTa_encoder_IMDB'
+custom_transformer_model.transformer.roberta.load_state_dict(torch.load(path/'models'/f'{name}.pth', map_location=None))
+
+learner = Learner(data_clas, 
+                  custom_transformer_model, 
+                  opt_func = CustomAdamW, 
+                  metrics=[accuracy, error_rate])
+
+```
 
 
 
