@@ -4,19 +4,19 @@ In this note book we will be look in very close details of the famous **transfor
 
 ## Contents
 
-[***Overview***](https://github.com/Sylar257/Transformers-in-NLP#overview): Current research trends, incentives of this repo, and our objectives
+[***Overview***](https://sylar257.github.io/Transformers-in-NLP#overview): Current research trends, incentives of this repo, and our objectives
 
-[***Model selection***](https://github.com/Sylar257/Transformers-in-NLP#model_selection): Given so many high performance models, how do we choose which one to use?
+[***Model selection***](https://sylar257.github.io/Transformers-in-NLP#model_selection): Given so many high performance models, how do we choose which one to use?
 
-[***Self-Attention***](https://github.com/Sylar257/Transformers-in-NLP#self-attention): How the self-attention block works in deep learning architectures
+[***Self-Attention***](https://sylar257.github.io/Transformers-in-NLP#self-attention): How the self-attention block works in deep learning architectures
 
-[***Positional Encoding***](https://github.com/Sylar257/Transformers-in-NLP#positional_encoding): Representing the order of the sequence using positional encoding
+[***Positional Encoding***](https://sylar257.github.io/Transformers-in-NLP#positional_encoding): Representing the order of the sequence using positional encoding
 
-[***Residual connection***](https://github.com/Sylar257/Transformers-in-NLP#residuals): Residuals are implemented for better learning efficiency and loss convergence
+[***Residual connection***](https://sylar257.github.io/Transformers-in-NLP#residuals): Residuals are implemented for better learning efficiency and loss convergence
 
-[***Transformer***](https://github.com/Sylar257/Transformers-in-NLP#Overall_structure): High-level structure of the transformer
+[***Transformer***](https://sylar257.github.io/Transformers-in-NLP#Overall_structure): High-level structure of the transformer
 
-[***Implementation***](https://github.com/Sylar257/Transformers-in-NLP#Implementation): Implement transformer with transfer learning on IMDB sentiment analysis dataset
+[***Implementation***](https://sylar257.github.io/Transformers-in-NLP#Implementation): Implement transformer with transfer learning on IMDB sentiment analysis dataset
 
 ## Overview
 
