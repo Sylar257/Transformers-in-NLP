@@ -2,6 +2,8 @@
 
 In this note book we will be look in very close details of the famous **transformer** as proposed in the paper [Attention Is All You Need](https://arxiv.org/abs/1706.03762). To accompany the digestion, we will also be looking at how **attention mechanism** works in deep learning and finally implement transformer with **transfer learning** with FastAI library.
 
+![transformer](images/transformer.jpg)
+
 ## Contents
 
 [***Overview***](https://sylar257.github.io/Transformers-in-NLP#overview): Current research trends, incentives of this repo, and our objectives
@@ -34,9 +36,11 @@ More specifically, we are going integrate `FastAI` and the `transformers` librar
 
 ## Code Implementation
 
-You will find two Jupyter notebooks in this repo. In the [Transformer with no LM fine-tuning.ipynb](https://github.com/Sylar257/Transformers-in-NLP/blob/master/Transformer%20with%20no%20LM%20fine-tuning.ipynb) we will implement transformer with `FastAI` library without fine-tuning the language model separately. This notebook follows strictly the guide provided by [Maximilien Roberti](https://towardsdatascience.com/@maximilienroberti). Details of his guide can be found both in his [Medium post](https://towardsdatascience.com/fastai-with-transformers-bert-roberta-xlnet-xlm-distilbert-4f41ee18ecb2) as well as [Kaggle chanllange](https://www.kaggle.com/maroberti/fastai-with-transformers-bert-roberta). (Thumbs up for Maximilien Roberti)
+You will find **three** Jupyter notebooks in this repo. In the [Transformer with no LM fine-tuning.ipynb](https://github.com/Sylar257/Transformers-in-NLP/blob/master/Transformer%20with%20no%20LM%20fine-tuning.ipynb) we will implement transformer with `FastAI` library without fine-tuning the language model separately. This notebook follows strictly the guide provided by [Maximilien Roberti](https://towardsdatascience.com/@maximilienroberti). Details of his guide can be found both in his [Medium post](https://towardsdatascience.com/fastai-with-transformers-bert-roberta-xlnet-xlm-distilbert-4f41ee18ecb2) as well as [Kaggle chanllange](https://www.kaggle.com/maroberti/fastai-with-transformers-bert-roberta). (Thumbs up for Maximilien Roberti)
 
 The reason why there exists a second notebook is because in Maximilien’s [implementation](https://www.kaggle.com/maroberti/fastai-with-transformers-bert-roberta) he mainly replaced the AWD_LSTM model from `FastAI` by **RoBERTa** from `Hugging Face`. According to Jeremy’s [ULMFiT paper](https://arxiv.org/pdf/1801.06146.pdf), if we’d fine tuning the encoder of the **RoBERTa** model as a language model before constructing the classifier for sentiment analysis task the accuracy could be even better. Hence, in the [Implement various Transformers with FastAI.ipynb](https://github.com/Sylar257/Transformers-in-NLP/blob/master/Implement%20various%20Transformers%20with%20FastAI.ipynb) you will find the complete code for building two separate `databunch` for both language model and classification task as well as how can we apply *transfer learning* with `transformers` while taking advantage of the convenience of `FastAI` toolkit.
+
+Lastly, there is a new promising model coming out as I am creating this repository: **ALBERT**. Since the name is pretty cool(and it definitely has some attractive trait, see next section), let’s take it out for a spin. This model is also trained with `FastAI` library’s infrastructure and it is expected to out-perform **RoBERTa** as advertised in it’s [original paper](https://arxiv.org/pdf/1909.11942v4.pdf)
 
 To benchmark our result we will be using the classic [IMDb sentiment analysis dataset](https://ai.stanford.edu/~ang/papers/acl11-WordVectorsSentimentAnalysis.pdf). Following the standard ULMFiT approach, in the last [repo](https://github.com/Sylar257/ULMFiT-Sentiment-Analysis), we were able to reach **94.7%** accuracy which is slightly better than the state-of-the-art result in 2017 (94.1% accuracy). Now let’s challenge ourselves to push these results even further by implementing more advanced skills.
 
@@ -44,13 +48,13 @@ In this repository you will find everything you need to incorporate transformers
 
 ## Model_selection
 
-*BERT, GPT, GPT-2, Transformer-XL, XLNet, XLM, RoBERTa, DistilBERT, ALBERT, XLM-RoBERTa*, the list goes on. There are so many good performing NLP models out there all available with pre-trained weight on huge datasets. I could be overwhelming to decide which model to use. While this repo focuses on the Transformer family, here is come quick tips towards choosing your model.
+*BERT, GPT, GPT-2, Transformer-XL, XLNet, XLM, RoBERTa, DistilBERT, ALBERT, XLM-RoBERTa*, *ALBERT*, the list goes on. There are so many good performing NLP models out there all available with pre-trained weight on huge datasets. I could be overwhelming to decide which model to use. While this repo focuses on the Transformer family, here is come quick tips towards choosing your model.
 
-**BERT** is certainly outperforming several NLP models that was previously state-of-the-art. Its performance improvement is largely attributed to its bidirectional transformer using Masked Language Model. **RoBERTa**, **DistilBERT** and **XLNet** are three powerful models that are popularly used and their various versions are available in `Hugging Face`. **RoBERTa** is a retraining of **BERT** with 1000% more training data and stronger compute power. In addition, dynamic masking is used during training. **DistilBERT** trains similarly to **BERT** but it has only half the number of parameters by using a technique called distillation. **DistilBERT** is not necessary more accurate then its counterparts but it requires less time to train and it’s faster during inference time. **XLNet** is the heavy weight player, it’s trained with larger datasets with much stronger computing power and longer time (about 5 times more than **BERT**). Moreover, during training time, **XLNet** doesn’t adopt masked language model, unlike **BERT**/**RoBERTa**/**DistilBERT**, but uses permutation language modeling where all tokens are predicted but in random order. The benefit of this is that the model could potentially learn the dependencies between all words. (with masked language model, dependencies between masked words are lost)
+**BERT** is certainly outperforming several NLP models that was previously state-of-the-art. Its performance improvement is largely attributed to its bidirectional transformer using Masked Language Model. **RoBERTa**, **DistilBERT** and **XLNet** are three powerful models that are popularly used and their various versions are available in `Hugging Face`. **RoBERTa** is a retraining of **BERT** with 1000% more training data and stronger compute power. In addition, dynamic masking is used during training. **DistilBERT** trains similarly to **BERT** but it has only half the number of parameters by using a technique called distillation. **DistilBERT** is not necessary more accurate then its counterparts but it requires less time to train and it’s faster during inference time. **XLNet** is the heavy weight player, it’s trained with larger datasets with much stronger computing power and longer time (about 5 times more than **BERT**). Moreover, during training time, **XLNet** doesn’t adopt masked language model, unlike **BERT**/**RoBERTa**/**DistilBERT**/**ALBERT**, but uses permutation language modeling where all tokens are predicted but in random order. The benefit of this is that the model could potentially learn the dependencies between all words. (with masked language model, dependencies between masked words are lost) Lastly, **ALBERT** from Google is another new power player in town. As compared to its peers, **ALBERT** is famous for having outstanding performance with much less parameters. More specifically, the authors adopted *factorized embedding parameterization* to decompose large vocabulary embed matrix into two small matrices. In addition, *cross-layer parameter sharing* was used so that we don’t have to learn **11 bert-encoder weights** (we only need update one). There is an update on *inter-sentence coherence loss*, however, **ALBERT** still uses MLM training.
 
 #### Conclusion
 
-**BERT**/**RoBERTa** are very good baseline models are should perform fairly well for most NLP tasks. **XLNet**’s permutation based training could potentially give us a performance boost but the fine-tuning and inference  takes more time. If we want fast inference speed, go for **DistilBERT**.
+**BERT**/**RoBERTa** are very good baseline models are should perform fairly well for most NLP tasks. **XLNet**’s permutation based training could potentially give us a performance boost but the fine-tuning and inference  takes more time. If we want fast inference speed, go for **DistilBERT**. **ALBERT** offers fasted training as it has the smallest parameters to update considering same model scale.
 
 
 
@@ -151,7 +155,7 @@ In this repository you will find everything you need to incorporate transformers
 
 [***RoBERTa with ULMFiT***](https://github.com/Sylar257/Transformers-in-NLP#roberta_ULMFiT): Follow ULMFiT strategy by fine-tuning RoBERTa using Masked Language Modeling before training the actual sequence classifier
 
-[***XLNet***](https://github.com/Sylar257/Transformers-in-NLP#XLNet): Fine tuning XLNet for IMDb sentiment analysis
+[***ALBERT***](https://github.com/Sylar257/Transformers-in-NLP#XLNet): Fine tuning ALBERT for IMDb sentiment analysis
 
 
 
@@ -614,11 +618,20 @@ learner = Learner(data_clas,
                   custom_transformer_model, 
                   opt_func = CustomAdamW, 
                   metrics=[accuracy, error_rate])
-
 ```
 
+#### 7. Classifier final result
 
+To recap the training process, we divided the model into **14 layer groups** and gradually unfreezes bottom layers as top layer learns more reasonable weight to avoid catastrophic forgetting. (refer to the [**the second notebook**](https://github.com/Sylar257/Transformers-in-NLP/blob/master/Transformer training with Language model tuning.ipynb) for training details)
 
+After unfreeze the entire architecture and fine-tune the model, we are able to obtain around **95.8%** accuracy. It is not a sizable increment from **95.3%** (with out LM fine-tuning). I actually repeated the training process 3 times with different LM fine-tuning hyper-parameters and I was able to *consistently get good result*. It’s safe to conclude that the **ULMFiT** process applied in **RoBERTa** is definitely beneficial.
 
+![RoBERTa_LM_fine_tuning_final](images/RoBERTa_LM_fine_tuning_final.png)
 
-## XLNet
+## ALBERT
+
+As I was creating this **Transformer** training series, a new model came out from Google(again) named **ALBERT**. Since the name is pretty cool and it was claimed in it’s [original paper](https://arxiv.org/pdf/1909.11942v4.pdf) that it would outperform **XLNet** in the General Language Understanding Evaluation (GLUE) benchmark by significant margin, I’ve decided to add this third section to take **ALBERT** for a spin.
+
+As compared to its peers, **ALBERT** is famous for having outstanding performance with much less parameters. More specifically, the authors adopted *factorized embedding parameterization* to decompose large vocabulary embed matrix into two small matrices. Instead of having a huge number of *embedding parameters* ($vocabulary\ size * hidden\ layer\ size$) we now have $(vocabulary\ size*embed\ size + embed\ size*hidden\ layer\ size)$. This change has lead to a sizable parameter reduction given $E \ll H$ .
+
+In addition, *cross-layer parameter sharing* was used so that we don’t have to learn **11 bert-encoder weights** (we only need update one). More specifically, we have weight sharing in both **feed-forward network** and **attention parameters**. This change allows us to build much deeper networks without increasing the number of parameters significantly. There is an update on *inter-sentence coherence loss*, however, **ALBERT** still uses MLM training.
