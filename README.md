@@ -137,7 +137,7 @@ Of course, the layers are stacked for the **transformer**. We have **6-layer-sta
 
 ![layer-stacking](images/layer-stacking.png)
 
-## Code_Implementation
+# Code_Implementation
 
 You will find two Jupyter notebooks in this repo. In the [**Transformer with no LM fine-tuning.ipynb**](https://github.com/Sylar257/Transformers-in-NLP/blob/master/Transformer%20with%20no%20LM%20fine-tuning.ipynb) we will implement transformer with `FastAI` library without fine-tuning the language model separately. This notebook follows strictly the guide provided by [Maximilien Roberti](https://towardsdatascience.com/@maximilienroberti). Details of his guide can be found both in his [Medium post](https://towardsdatascience.com/fastai-with-transformers-bert-roberta-xlnet-xlm-distilbert-4f41ee18ecb2) as well as [Kaggle chanllange](https://www.kaggle.com/maroberti/fastai-with-transformers-bert-roberta). (Thumbs up for Maximilien Roberti)
 
