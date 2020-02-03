@@ -16,9 +16,7 @@ In this note book we will be look in very close details of the famous **transfor
 
 [***Residual connection***](https://sylar257.github.io/Transformers-in-NLP#residuals): Residuals are implemented for better learning efficiency and loss convergence
 
-[***Transformer***](https://sylar257.github.io/Transformers-in-NLP#Overall_structure): High-level structure of the transformer
-
-[***Implementation***](https://sylar257.github.io/Transformers-in-NLP#Implementation): Implement transformer with transfer learning on IMDB sentiment analysis dataset
+[***Implementation***](https://sylar257.github.io/Transformers-in-NLP#Code_Implementation): Implement transformer with transfer learning on IMDB sentiment analysis dataset
 
 ## Overview
 
@@ -139,7 +137,7 @@ Of course, the layers are stacked for the **transformer**. We have **6-layer-sta
 
 ![layer-stacking](images/layer-stacking.png)
 
-## Implementation
+## Code_Implementation
 
 You will find two Jupyter notebooks in this repo. In the [**Transformer with no LM fine-tuning.ipynb**](https://github.com/Sylar257/Transformers-in-NLP/blob/master/Transformer%20with%20no%20LM%20fine-tuning.ipynb) we will implement transformer with `FastAI` library without fine-tuning the language model separately. This notebook follows strictly the guide provided by [Maximilien Roberti](https://towardsdatascience.com/@maximilienroberti). Details of his guide can be found both in his [Medium post](https://towardsdatascience.com/fastai-with-transformers-bert-roberta-xlnet-xlm-distilbert-4f41ee18ecb2) as well as [Kaggle chanllange](https://www.kaggle.com/maroberti/fastai-with-transformers-bert-roberta). (Thumbs up for Maximilien Roberti)
 
